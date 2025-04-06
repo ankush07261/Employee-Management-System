@@ -1,11 +1,13 @@
 package emp.manage.employee.entity;
 
 import jakarta.persistence.*;
+
+import java.io.Serializable;
 import java.time.LocalDate;
 
 @Entity
 @Table(name = "employees")
-public class Employee {
+public class Employee implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,7 +27,8 @@ public class Employee {
 
     public Employee() {}
 
-    public Employee(Long id, String name, String department, String role, String project, double salary, LocalDate joinDate, LocalDate leaveDate) {
+    public Employee(Long id, String name, String department, String role, String project,
+                    double salary, LocalDate joinDate, LocalDate leaveDate) {
         this.id = id;
         this.name = name;
         this.department = department;
@@ -35,6 +38,8 @@ public class Employee {
         this.joinDate = joinDate;
         this.leaveDate = leaveDate;
     }
+
+    // Getters and setters...
 
     public Long getId() {
         return id;

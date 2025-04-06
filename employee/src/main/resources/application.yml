@@ -1,0 +1,7 @@
+spring:
+  data:
+    redis:
+      url: redis://localhost:6379
+      timeout: 60000
+  cache:
+    type: redis
