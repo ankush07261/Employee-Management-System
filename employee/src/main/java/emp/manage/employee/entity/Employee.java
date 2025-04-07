@@ -1,60 +1,39 @@
 package emp.manage.employee.entity;
 
-import jakarta.persistence.*;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
-import java.io.Serializable;
 import java.time.LocalDate;
+import java.util.Collection;
+import java.util.Collections;
 
-@Entity
-@Table(name = "employees")
-public class Employee implements Serializable {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class Employee implements UserDetails {
     private Long id;
-
-    private String name;
+    private String email;
     private String department;
-    private String role;
-    private String project;
     private double salary;
+    private String password;
+    private String role; // Example: "ROLE_USER" or "ROLE_ADMIN"
 
-    @Column(name = "join_date", nullable = false)
-    private LocalDate joinDate;
+    // Getters and setters for id, email, password, and role
 
-    @Column(name = "leave_date")
-    private LocalDate leaveDate;
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        // Return the role as a GrantedAuthority
+        return Collections.singleton(() -> role);
+    }
 
-    public Employee() {}
+    @Override
+    public String getPassword() {
+        return password;
+    }
 
-    public Employee(Long id, String name, String department, String role, String project,
-                    double salary, LocalDate joinDate, LocalDate leaveDate) {
-        this.id = id;
-        this.name = name;
-        this.department = department;
+    public String getRole() { // Added getter for role
+        return role;
+    }
+
+    public void setRole(String role) { // Added setter for role
         this.role = role;
-        this.project = project;
-        this.salary = salary;
-        this.joinDate = joinDate;
-        this.leaveDate = leaveDate;
-    }
-
-    // Getters and setters...
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public String getDepartment() {
@@ -65,22 +44,6 @@ public class Employee implements Serializable {
         this.department = department;
     }
 
-    public String getRole() {
-        return role;
-    }
-
-    public void setRole(String role) {
-        this.role = role;
-    }
-
-    public String getProject() {
-        return project;
-    }
-
-    public void setProject(String project) {
-        this.project = project;
-    }
-
     public double getSalary() {
         return salary;
     }
@@ -89,13 +52,32 @@ public class Employee implements Serializable {
         this.salary = salary;
     }
 
-    public LocalDate getJoinDate() {
-        return joinDate;
+    @Override
+    public String getUsername() {
+        return email;
     }
 
-    public void setJoinDate(LocalDate joinDate) {
-        this.joinDate = joinDate;
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
     }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
+    }
+
+    private LocalDate leaveDate;
 
     public LocalDate getLeaveDate() {
         return leaveDate;
@@ -103,5 +85,25 @@ public class Employee implements Serializable {
 
     public void setLeaveDate(LocalDate leaveDate) {
         this.leaveDate = leaveDate;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 }

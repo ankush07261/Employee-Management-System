@@ -2,55 +2,59 @@ package emp.manage.employee.service;
 
 import emp.manage.employee.entity.Employee;
 import emp.manage.employee.repository.EmployeeRepository;
-import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.core.type.TypeReference;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 @Service
-public class EmployeeService {
+public class EmployeeService implements UserDetailsService {
 
     private final EmployeeRepository employeeRepository;
-    private final RedisTemplate<String, Object> redisTemplate;
+    private final PasswordEncoder passwordEncoder;
 
-    public EmployeeService(EmployeeRepository employeeRepository, RedisTemplate<String, Object> redisTemplate) {
+    // ✅ Constructor manually defined
+    public EmployeeService(EmployeeRepository employeeRepository, PasswordEncoder passwordEncoder) {
         this.employeeRepository = employeeRepository;
-        this.redisTemplate = redisTemplate;
+        this.passwordEncoder = passwordEncoder;
     }
 
+    @Cacheable(value = "employees")
     public List<Employee> getAll() {
-        String cacheKey = "employee::all";
-        List<Employee> employees = null;
-        Object cachedData = redisTemplate.opsForValue().get(cacheKey);
-        if (cachedData != null) {
-            employees = new ObjectMapper().convertValue(cachedData, new TypeReference<List<Employee>>() {});
-        }
-
-        if (employees != null) {
-            System.out.println("🔥 Loaded from Redis cache");
-            return employees;
-        }
-
-        employees = employeeRepository.findAll();
-        redisTemplate.opsForValue().set(cacheKey, employees, 10, TimeUnit.MINUTES); // optional TTL
-        return employees;
+        return employeeRepository.findAll();
     }
 
+    @CachePut(value = "employees", key = "#e.id")
     public Employee save(Employee e) {
-        Employee saved = employeeRepository.save(e);
-        redisTemplate.delete("employee::all"); // bust cache
-        return saved;
+        return employeeRepository.save(e);
     }
 
+    @CacheEvict(value = "employees", key = "#id")
     public void softDelete(Long id) {
         Employee emp = employeeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
         emp.setLeaveDate(LocalDate.now());
         employeeRepository.save(emp);
-        redisTemplate.delete("employee::all"); // bust cache
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        return employeeRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
+    }
+
+    public Employee register(Employee employee) {
+        if (employeeRepository.findByEmail(employee.getEmail()).isPresent()) {
+            throw new RuntimeException("Email already exists");
+        }
+        employee.setPassword(passwordEncoder.encode(employee.getPassword()));
+        return employeeRepository.save(employee);
     }
 }
